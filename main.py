@@ -132,3 +132,177 @@ def create_note(
     return {
         "message": "Note created successfully"
     }
+
+@app.get("/notes", response_model=list[schemas.NoteResponse])
+def get_notes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    notes = db.query(Note).filter(
+        Note.owner_id == current_user.id
+    ).all()
+
+    return notes
+
+
+@app.get("/notes/{note_id}", response_model=schemas.NoteResponse)
+def get_note(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    note = db.query(Note).filter(
+        Note.id == note_id,
+        Note.owner_id == current_user.id
+    ).first()
+
+    if not note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    return note
+
+@app.put("/notes/{note_id}")
+def update_note(
+    note_id: int,
+    updated_note: schemas.NoteCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    note = db.query(Note).filter(
+        Note.id == note_id,
+        Note.owner_id == current_user.id
+    ).first()
+
+    if not note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    note.title = updated_note.title
+    note.content = updated_note.content
+
+    db.commit()
+    db.refresh(note)
+
+    return {
+        "message": "Note updated successfully"
+    }
+
+@app.put("/notes/{note_id}")
+def update_note(
+    note_id: int,
+    updated_note: schemas.NoteCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    note = db.query(Note).filter(
+        Note.id == note_id,
+        Note.owner_id == current_user.id
+    ).first()
+
+    if not note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    note.title = updated_note.title
+    note.content = updated_note.content
+
+    db.commit()
+    db.refresh(note)
+
+    return {
+        "message": "Note updated successfully"
+    }
+
+@app.delete("/notes/{note_id}")
+def delete_note(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    note = db.query(Note).filter(
+        Note.id == note_id,
+        Note.owner_id == current_user.id
+    ).first()
+
+    if not note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    db.delete(note)
+    db.commit()
+
+    return {
+        "message": "Note deleted successfully"
+    }
+
+
+@app.post("/notes/{note_id}/share")
+def share_note(
+    note_id: int,
+    share_data: schemas.ShareNote,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    note = db.query(Note).filter(
+        Note.id == note_id,
+        Note.owner_id == current_user.id
+    ).first()
+
+    if not note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    target_user = db.query(User).filter(
+        User.email == share_data.email
+    ).first()
+
+    if not target_user:
+        raise HTTPException(
+            status_code=404,
+            detail="Target user not found"
+        )
+
+    note.shared_users.append(target_user)
+
+    db.commit()
+
+    return {
+        "message": f"Note shared with {target_user.email}"
+    }
+
+@app.get("/shared-notes", response_model=list[schemas.NoteResponse])
+def get_shared_notes(
+    current_user: User = Depends(get_current_user)
+):
+
+    return current_user.shared_with_me
+
+@app.get("/about")
+def about():
+
+    return {
+        "name": "Kartik Pandey",
+        "email": "kartikpandey139.you@gmail.com",
+
+        "my_features": {
+            "Note Sharing":
+            "Users can securely share notes with other registered users using email-based sharing."
+        }
+    }

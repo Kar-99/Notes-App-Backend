@@ -27,6 +27,9 @@ class NoteResponse(BaseModel):
     class Config:
         from_attributes = True
 
-    class NoteCreate(BaseModel):
+class NoteCreate(BaseModel):
         title: str
         content: str      
+
+class ShareNote(BaseModel):
+        email: str
